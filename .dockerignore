@@ -1,2 +1,4 @@
 *
 !backend/build/hashi-ui-linux-amd64
+!backend/build/hashi-ui-linux-arm
+!qemu-arm-static

@@ -16,3 +16,6 @@ build
 
 # Vagrant
 .vagrant
+
+# Cross compilation binaries
+qemu-arm-static
