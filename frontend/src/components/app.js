@@ -6,7 +6,6 @@ import MuiThemeProvider from "material-ui/styles/MuiThemeProvider"
 import { red500, green800, green900 } from "material-ui/styles/colors"
 import getMuiTheme from "material-ui/styles/getMuiTheme"
 import AppBar from "material-ui/AppBar"
-import Drawer from "material-ui/Drawer"
 import Divider from "material-ui/Divider"
 import MenuItem from "material-ui/MenuItem"
 import FlatButton from "material-ui/FlatButton"
@@ -143,18 +142,26 @@ class App extends Component {
             <NotificationsBar />
             {uncaughtExceptionBar}
           </div>
-          <div>
-            {topbar}
-          </div>
+          <div>{topbar}</div>
           <div>
             <div style={{ float: "left", width: "200px" }}>
               {navbar}
               <Divider />
               {changeAppBar}
+              <div
+                style={{
+                  fontSize: "small",
+                  position: "absolute",
+                  bottom: 0,
+                  color: "grey",
+                  width: 200,
+                  textAlign: "center"
+                }}
+              >
+                version: {window.GIT_HASH || "webpack-dev"}
+              </div>
             </div>
-            <div style={{ float: "right", width: this.state.width }}>
-              {this.props.children}
-            </div>
+            <div style={{ float: "right", width: this.state.width }}>{this.props.children}</div>
           </div>
         </div>
       </MuiThemeProvider>

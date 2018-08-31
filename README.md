@@ -1,5 +1,7 @@
 Hashi UI [![Build Status](https://travis-ci.org/jippi/hashi-ui.svg?branch=master)](https://travis-ci.org/jippi/hashi-ui)
 ========
+[![Code Quality: Javascript](https://img.shields.io/lgtm/grade/javascript/g/jippi/hashi-ui.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/jippi/hashi-ui/context:javascript)
+[![Total Alerts](https://img.shields.io/lgtm/alerts/g/jippi/hashi-ui.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/jippi/hashi-ui/alerts)
 
 [![Join the chat at https://gitter.im/hashi-ui/Lobby](https://badges.gitter.im/hashi-ui/Lobby.svg)](https://gitter.im/hashi-ui/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Docker Stars](https://img.shields.io/docker/stars/jippi/hashi-ui.svg)](https://hub.docker.com/r/jippi/hashi-ui/)
@@ -7,9 +9,9 @@ Hashi UI [![Build Status](https://travis-ci.org/jippi/hashi-ui.svg?branch=master
 
 An awesome user interface (even for mobile devices!) for HashiCorp Consul & Nomad, plain and simple :-)
 
-![Hashi UI](https://dl.dropboxusercontent.com/u/27514/nomad-screenshots/0.5/cluster-overview-small.jpg)
+![Hashi UI](https://photos-1.dropbox.com/t/2/AAAlaj58EMrlMs0OnIzJ5mdEW_nL_1D9VG34ZtEtyt9q4Q/12/27514/jpeg/32x32/3/1506114000/0/2/cluster-overview-small.jpg/EI74IBjWwZDkBCAHKAc/KKeQKoMcAJemYXbzAnpkb77O5ajxj7I-qD4bE44eMXk?dl=0&size=2048x1536&size_mode=3)
 
-[View more screenshots of Nomad & Consul interface](https://github.com/jippi/hashi-ui/blob/master/SCREENSHOTS.md)
+[View more screenshots of Nomad & Consul interface](https://www.dropbox.com/sh/lce7ya1zsa6rjm8/AADH6hYQSnW-KxKkIybiOK9ta?dl=0)
 
 # TOC
 
@@ -98,21 +100,24 @@ hashi-ui can be controlled by both ENV or CLI flags as described below
 
 ## General Configuration
 
-| Environment        	  |CLI (`--flag`)            | Default                 	    | Description                                                                                                      |
-|-------------------------|---------------------------|---------------------------- |------------------------------------------------------------------------------------------------------------------|
-| `LOG_LEVEL` 	          | `log-level`               | `info`                  	| Log level to use while running the hashi-ui server - (`critical`, `error`, `warning`, `notice`, `info`, `debug`) |
-| `PROXY_ADDRESS`         | `proxy-address` 	      | `<empty>`               	| (optional) The base URL of the UI when running behind a reverse proxy (ie: example.com/nomad/)                   |
-| `LISTEN_ADDRESS`        | `listen-address`          | `0.0.0.0:3000`              | The IP + PORT to listen on |
-| `HTTPS_ENABLE`          | `https-enable`            | `false`                     | Use HTTPS instead of HTTP for Hashi-UI |
-| `SERVER_CERT`           | `server-cert`             | `<empty>`                   | Server certificate to use when HTTPS is enabled |
-| `SERVER_KEY`            | `server-key`              | `<empty>`                   | Server key to use when HTTPS is enabled |
+| Environment        	       | CLI (`--flag`)              | Default                 	    | Description                                                                                                      |
+|----------------------------|-----------------------------|---------------------------- |------------------------------------------------------------------------------------------------------------------|
+| `LOG_LEVEL` 	             | `log-level`                 | `info`                  	| Log level to use while running the hashi-ui server - (`critical`, `error`, `warning`, `notice`, `info`, `debug`) |
+| `PROXY_ADDRESS`            | `proxy-address` 	           | `<empty>`               	| (optional) The base URL of the UI when running behind a reverse proxy (ie: example.com/nomad/)                   |
+| `LISTEN_ADDRESS`           | `listen-address`            | `0.0.0.0:3000`              | The IP + PORT to listen on |
+| `HTTPS_ENABLE`             | `https-enable`              | `false`                     | Use HTTPS instead of HTTP for Hashi-UI |
+| `SERVER_CERT`              | `server-cert`               | `<empty>`                   | Server certificate to use when HTTPS is enabled |
+| `SERVER_KEY`               | `server-key`                | `<empty>`                   | Server key to use when HTTPS is enabled |
+| `SITE_TITLE`               | `site-title`                | `<empty>`                   | Free-form text to be prepended to title-bar; eg. "Staging" |
+| `UPDATE_THROTTLE_DURATION` | `throttle-update-duration`  | `<empty>`                   | Duration to sleep before polling Nomad/Consul for updates. Useful in busy clusters ([example: `5s`, `250ms`](https://golang.org/pkg/time/#ParseDuration)) |
 
 ## Nomad Configuration
 
 | Environment        	  |CLI (`--flag`)    	      | Default                 	| Description                                                                                                      |
 |-------------------------|---------------------------|-----------------------------|------------------------------------------------------------------------------------------------------------------|
 | `NOMAD_ENABLE`          | `nomad-enable`      	  | `false` 	                | Use `--nomad.enable` or env `NOMAD_ENABLE=1` to enable Nomad backend                                             |
-| `NOMAD_ADDR`            | `nomad-address`      	  | `http://127.0.0.1:4646` 	| Protocol + Host + Port for your Nomad instance                                                                               |
+| `NOMAD_ADDR`            | `nomad-address`      	  | `http://127.0.0.1:4646` 	| Protocol + Host + Port for your Nomad instance                                                                   |
+| `NOMAD_ACL_TOKEN`  	  | `nomad-acl-token`   	  | `<empty>` 		          	| The Nomad access token to use (optional)                                                                        |
 | `NOMAD_READ_ONLY`    	  | `nomad-read-only`   	  | `false` 		        	| Should hash-ui allowed to modify Nomad state (stop/start jobs and so forth)	                                   |
 | `NOMAD_CACERT`      	  | `nomad-ca-cert`      	  | `<empty>`   	            | (optional) path to a CA Cert file (remember to use `https://` in `NOMAD_ADDR` if you enable TLS)                 |
 | `NOMAD_CLIENT_CERT`  	  | `nomad-client-cert`       | `<empty>` 	                | (optional) path to a client cert file (remember to use `https://` in `NOMAD_ADDR` if you enable TLS)             |
@@ -120,6 +125,7 @@ hashi-ui can be controlled by both ENV or CLI flags as described below
 | `NOMAD_PORT_http` 	  | `<none>` 	              | `0.0.0.0:3000`          	| The IP + PORT to listen on (will overwrite `LISTEN_ADDRESS`)                                                     |
 | `NOMAD_HIDE_ENV_DATA`   | `nomad-hide-env-data` 	  | `false`          	        | Whether Nomad env{} values should be hidden (will prevent updating jobs in the UI)                               |
 | `NOMAD_ALLOW_STALE`     | `nomad-allow-stale` 	  | `true`          	        | Whether Hashi-UI should use stale mode when connecting to the nomad-api servers                                  |
+| `NOMAD_COLOR`           | `nomad-color` 	          | `#4b9a7d`          	        | Set the main color for nomad related screens.                                                                    |
 
 ## Consul Configuration
 
@@ -128,25 +134,21 @@ hashi-ui can be controlled by both ENV or CLI flags as described below
 | `CONSUL_ENABLE`         | `consul-enable`      	  | `false` 	                | Use `--consul-enable` or env `CONSUL_ENABLE=1` to enable Consul backend                                          |
 | `CONSUL_ADDR`           | `consul-address`    	  | `127.0.0.1:8500`            | Host + Port for your Consul server, e.g. localhost:8500` (Do not include protocol)                               |
 | `CONSUL_READ_ONLY`  	  | `consul-read-only`   	  | `false` 		            | Should hash-ui be allowed to modify Consul state (modify KV, Services and so forth)                              |
-| `CONSUL_ACL_TOKEN`  	  | `consul.acl-token`   	  | `<empty>` 		          	| The Consul access token to use (optional)                                                                        |
+| `CONSUL_ACL_TOKEN`  	  | `consul-acl-token`   	  | `<empty>` 		          	| The Consul access token to use (optional)                                                                        |
 | `CONSUL_HTTP_TOKEN`     | `<empty>`                 | `<empty>`                   | Synonym for `CONSUL_ACL_TOKEN`                                                                                   |
 | `CONSUL_HTTP_SSL_VERIFY`| `<empty>`                 | `true`                      | Choose if you want your certificate to be verified (Likely to choose false if you have a custom SSL certificate) |
 | `CONSUL_HTTP_SSL`       | `<empty>`                 | `false`                     | Enable HTTPS client to consul                                                                                    |
 | `CONSUL_CACERT`      	  | `<empty>`      	          | `<empty>`   	            | (optional) path to a CA Cert file (remember to set `CONSUL_HTTP_SSL` to true)                                    |
 | `CONSUL_CLIENT_CERT`    | `<empty>`                 | `<empty>` 	                | (optional) path to a client cert file (remember to set `CONSUL_HTTP_SSL` to true)                                |
 | `CONSUL_CLIENT_KEY`  	  | `<empty>`                 | `<empty>` 	                | (optional) path to a client key file (remember to set `CONSUL_HTTP_SSL` to true)          	                   |
+| `CONSUL_COLOR`          | `consul-color` 	          | `#694a9c`          	        | Set the main color for consul related screens.                                                                   |
 
-## Instrumentation Configuration
+## Running behind a Load Balancer
 
-| Environment        	  |CLI (`--flag`)    	      | Default                     | Description                                                                                                      |
-|-------------------------|-------------------------  |-----------------------------|------------------------------------------------------------------------------------------------------------------|
-| `NEWRELIC_APP_NAME`     | `newrelic.app_name`  	  | `hashi-ui`               	| (optional) NewRelic application name                                                                             |
-| `NEWRELIC_LICENSE`      | `newrelic.license`  	  | `<empty>`          	  		| (optional) NewRelic license key
+When Running Hashi UI behind AWS, an ALB is preferable as it supports HTTP websockets. Alternatively a NLB or ELB in 'TCP' mode will suffice.
 
 
-## Running in AWS
-
-When Running Hashi UI behind AWS ELB (even with Nginx/Traefik in between), ELB should be configured with TCP not HTTP Listeners (HTTP Listener doesn't support websockets)
+Hashi-UI exposes a `/_status` endpoint that can be used to check the health of Nomad and Consul endpoints.
 
 ## Running in Docker Compose
 

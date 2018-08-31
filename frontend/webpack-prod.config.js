@@ -2,16 +2,20 @@ const { resolve } = require("path")
 const webpack = require("webpack")
 const ExtractTextPlugin = require("extract-text-webpack-plugin")
 const HtmlWebpackPlugin = require("html-webpack-plugin")
+const UglifyJsPlugin = require("uglifyjs-webpack-plugin")
 
 const config = {
+  mode: "production",
   devtool: "source-map",
 
-  entry: ["babel-polyfill", "./src/main.js"],
+  entry: {
+    app: ["babel-polyfill", "./src/main.js"]
+  },
 
   output: {
     filename: "static/[name].[chunkhash].js",
-    sourceMapFilename: "static/[name].[chunkhash].map",
     chunkFilename: "static/[name].[chunkhash].chunks.js",
+    sourceMapFilename: "static/[name].[chunkhash].map",
     path: resolve(__dirname, "build/"),
     publicPath: ""
   },
@@ -34,6 +38,7 @@ const config = {
               [
                 "env",
                 {
+                  modules: false,
                   targets: {
                     browsers: ["last 2 versions"]
                   }
@@ -47,7 +52,10 @@ const config = {
               "babel-plugin-syntax-trailing-function-commas",
               "babel-plugin-transform-class-properties",
               "babel-plugin-transform-object-rest-spread",
-              "babel-plugin-transform-react-constant-elements"
+              "babel-plugin-transform-react-constant-elements",
+              "syntax-dynamic-import",
+              "lodash",
+              "recharts"
             ]
           }
         }
@@ -75,22 +83,14 @@ const config = {
   },
 
   plugins: [
-    new webpack.DefinePlugin({ "process.env": { NODE_ENV: JSON.stringify("production") } }),
-    new webpack.optimize.CommonsChunkPlugin({ name: "common" }),
+    new webpack.DefinePlugin({'process.env': JSON.stringify('production')}),
+    new webpack.DefinePlugin({'process.env.NODE_ENV': JSON.stringify('production')}),
     new webpack.LoaderOptionsPlugin({
       minimize: true,
       debug: false
     }),
-    new webpack.optimize.UglifyJsPlugin({
-      beautify: false,
-      mangle: {
-        screw_ie8: true,
-        keep_fnames: true
-      },
-      compress: {
-        screw_ie8: true
-      },
-      comments: false
+    new UglifyJsPlugin({
+      sourceMap: true,
     }),
     new HtmlWebpackPlugin({
       title: "Hashi-UI",
@@ -98,19 +98,7 @@ const config = {
       favicon: "./assets/img/favicon.png",
       template: "./index.html.ejs",
       appMountId: "app",
-      production: true,
-      minify: {
-        removeComments: true,
-        collapseWhitespace: true,
-        removeRedundantAttributes: true,
-        useShortDoctype: true,
-        removeEmptyAttributes: true,
-        removeStyleLinkTypeAttributes: true,
-        keepClosingSlash: true,
-        minifyJS: true,
-        minifyCSS: true,
-        minifyURLs: true
-      }
+      production: true
     })
   ]
 }

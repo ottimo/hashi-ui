@@ -28,9 +28,16 @@ class MetaPayload extends Component {
           {key}
         </dt>
       )
+
+      let v = metaBag[key]
+      switch (typeof v) {
+        case "boolean":
+          v = v ? "true" : "false"
+      }
+
       meta.push(
-        <dd key={`${key}dd`}>
-          {metaBag[key]}
+        <dd key={`${key}dd`} style={{ overflow: "auto" }}>
+          {v}
         </dd>
       )
     })

@@ -11,4 +11,4 @@ RUN ["/usr/bin/qemu-arm-static", "/bin/sh", "-c", "apk --update upgrade && \
 ADD ./backend/build/hashi-ui-linux-arm /hashi-ui
 #ADD ./backend/build/hashi-ui-linux-amd64 /hashi-ui
 EXPOSE 3000
-ENTRYPOINT ["/hashi-ui"]
+CMD ["/hashi-ui"]

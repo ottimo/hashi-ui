@@ -2,7 +2,7 @@ import React from "react"
 import PropTypes from "prop-types"
 import { Link, withRouter } from "react-router"
 
-const JobLink = ({ children, jobId, linkAppend, taskGroupId, taskId, router }) => {
+const JobLink = ({ children, jobId, version, linkAppend, taskGroupId, taskId, router }) => {
   const JobIdUrl = encodeURIComponent(jobId)
 
   if (taskGroupId) {
@@ -19,19 +19,16 @@ const JobLink = ({ children, jobId, linkAppend, taskGroupId, taskId, router }) =
 
   const query = {
     taskGroupId,
-    taskId
+    taskId,
+    version
   }
 
   const to = {
-    pathname: `/nomad/${router.params.region}/jobs/${JobIdUrl}${linkAppend}`,
+    pathname: `/nomad/${router.params.region}/jobs/${encodeURIComponent(JobIdUrl)}${linkAppend}`,
     query
   }
 
-  return (
-    <Link to={to}>
-      {children}
-    </Link>
-  )
+  return <Link to={to}>{children}</Link>
 }
 
 JobLink.defaultProps = {
@@ -44,6 +41,7 @@ JobLink.propTypes = {
   linkAppend: PropTypes.string,
   taskGroupId: PropTypes.string,
   taskId: PropTypes.string,
+  version: PropTypes.number,
   router: PropTypes.object.isRequired
 }
 

@@ -202,7 +202,7 @@ class ConsulServices extends Component {
                   return (
                     <ListItem
                       key={service.Name}
-                      onTouchTap={() => this._onClickService(service.Name)}
+                      onClick={() => this._onClickService(service.Name)}
                       primaryText={service.Name}
                       secondaryText={secondaryText}
                       leftIcon={icon}
@@ -334,7 +334,7 @@ function mapStateToProps({ consulServices, consulService }) {
 
 ConsulServices.defaultProps = {
   consulServices: [],
-  ConsulService: []
+  consulService: []
 }
 
 ConsulServices.propTypes = {

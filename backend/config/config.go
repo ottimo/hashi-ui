@@ -3,8 +3,12 @@ package config
 import (
 	"flag"
 	"fmt"
+	"log"
+	"net/url"
 	"strconv"
+	"strings"
 	"syscall"
+	"time"
 )
 
 var (
@@ -21,6 +25,9 @@ var (
 
 	flagNomadAddress = flag.String("nomad-address", "", "The address of the Nomad server. "+
 		"Overrides the NOMAD_ADDR environment variable if set. "+FlagDefault(defaultConfig.NomadAddress))
+
+	flagNomadACLToken = flag.String("nomad-acl-token", "", "An ACL token to use when talking to Nomad. "+
+		"Overrides the NOMAD_ACL_TOKEN environment variable if set. "+FlagDefault(defaultConfig.NomadACLToken))
 
 	flagNomadCACert = flag.String("nomad-ca-cert", "", "Path to the Nomad TLS CA Cert File. "+
 		"Overrides the NOMAD_CACERT environment variable if set. "+FlagDefault(defaultConfig.NomadCACert))
@@ -45,7 +52,7 @@ var (
 	flagConsulAddress = flag.String("consul-address", "", "The address of the Consul server. "+
 		"Overrides the CONSUL_ADDR environment variable if set. "+FlagDefault(defaultConfig.ConsulAddress))
 
-	flagConsulACLToken = flag.String("consul.acl-token", "", "A ACL token to use when talking to Consul. "+
+	flagConsulACLToken = flag.String("consul-acl-token", "", "An ACL token to use when talking to Consul. "+
 		"Overrides the CONSUL_ACL_TOKEN environment variable if set. "+FlagDefault(defaultConfig.ConsulACLToken))
 
 	flagLogLevel = flag.String("log-level", "",
@@ -66,27 +73,34 @@ var (
 	flagServerKey = flag.String("server-key", "",
 		"Server key to use when https protocol is enabled. "+FlagDefault(defaultConfig.ServerKey))
 
-	flagNewRelicAppName = flag.String("newrelic-app-name", "hashi-ui",
-		"The NewRelic app name. "+FlagDefault(defaultConfig.NewRelicAppName))
+	flagNomadColor = flag.String("nomad-color", "",
+		"Set the main color for nomad related screens. "+FlagDefault(defaultConfig.NomadColor))
 
-	flagNewRelicLicense = flag.String("newrelic-license", "",
-		"The NewRelic license key. "+FlagDefault(defaultConfig.NewRelicLicense))
+	flagConsulColor = flag.String("consul-color", "",
+		"Set the main color for consul related screens. "+FlagDefault(defaultConfig.ConsulColor))
+
+	flagSiteTitle = flag.String("site-title", "",
+		"Free-form text to be prepended to title-bar; eg. 'Staging'. "+FlagDefault(defaultConfig.SiteTitle))
+
+	flagThrottleUpdate = flag.String("throttle-update-frequency", "",
+		"Duration to sleep between updates when watching resources. Useful to throttle update frequencies on busy clusters. Example: 5s "+FlagDefault(""))
 )
 
 // Config for the hashi-ui server
 type Config struct {
-	LogLevel      string
-	ProxyAddress  string
-	ListenAddress string
-	HttpsEnable   bool
-	ServerCert    string
-	ServerKey     string
-
-	NewRelicAppName string
-	NewRelicLicense string
+	LogLevel               string
+	ProxyAddress           string
+	ProxyPath              string
+	ListenAddress          string
+	HttpsEnable            bool
+	ServerCert             string
+	ServerKey              string
+	SiteTitle              string
+	ThrottleUpdateDuration *time.Duration
 
 	NomadEnable      bool
 	NomadAddress     string
+	NomadACLToken    string
 	NomadCACert      string
 	NomadClientCert  string
 	NomadClientKey   string
@@ -94,11 +108,13 @@ type Config struct {
 	NomadSkipVerify  bool
 	NomadHideEnvData bool
 	NomadAllowStale  bool
+	NomadColor       string
 
 	ConsulEnable   bool
 	ConsulReadOnly bool
 	ConsulAddress  string
 	ConsulACLToken string
+	ConsulColor    string
 }
 
 // Parse the env and cli flags and store the outcome in a Config struct
@@ -114,7 +130,20 @@ func (c *Config) Parse() {
 	ParseConsulFlagConfig(c)
 	ParseConsulEnvConfig(c)
 
-	ParseNewRelicConfig(c)
+	if c.ProxyAddress != "" {
+		r, err := url.Parse(c.ProxyAddress)
+		if err != nil {
+			log.Fatal("Invalid Proxy Address, must be a valid URL")
+		}
+		c.ProxyPath = r.Path
+
+		// ensure the proxy path always end with a slash
+		if !strings.HasSuffix(c.ProxyPath, "/") {
+			c.ProxyPath = c.ProxyPath + "/"
+		}
+	} else {
+		c.ProxyPath = "/"
+	}
 }
 
 // DefaultConfig is the basic out-of-the-box configuration for hashi-ui
@@ -123,15 +152,18 @@ func DefaultConfig() *Config {
 		LogLevel:      "info",
 		ListenAddress: "0.0.0.0:3000",
 		HttpsEnable:   false,
-
-		NewRelicAppName: "hashi-ui",
+		SiteTitle:     "",
 
 		NomadReadOnly:    false,
 		NomadAddress:     "http://127.0.0.1:4646",
 		NomadHideEnvData: false,
+		NomadColor:       "#4b9a7d",
 
 		ConsulReadOnly: false,
 		ConsulAddress:  "127.0.0.1:8500",
+		ConsulColor:    "#694a9c",
+
+		ThrottleUpdateDuration: nil,
 	}
 }
 
@@ -156,6 +188,11 @@ func ParseAppEnvConfig(c *Config) {
 		c.ListenAddress = listenAddress
 	}
 
+	listenPort, ok := syscall.Getenv("PORT")
+	if ok {
+		c.ListenAddress = "0.0.0.0:" + listenPort
+	}
+
 	httpsEnable, ok := syscall.Getenv("HTTPS_ENABLE")
 	if ok {
 		c.HttpsEnable = httpsEnable != "0"
@@ -169,6 +206,20 @@ func ParseAppEnvConfig(c *Config) {
 	serverKey, ok := syscall.Getenv("SERVER_KEY")
 	if ok {
 		c.ServerKey = serverKey
+	}
+
+	siteTitle, ok := syscall.Getenv("SITE_TITLE")
+	if ok {
+		c.SiteTitle = siteTitle
+	}
+
+	throttle, ok := syscall.Getenv("UPDATE_THROTTLE_DURATION")
+	if ok {
+		v, err := time.ParseDuration(throttle)
+		if err != nil {
+			log.Fatalf("Could not parse UPDATE_THROTTLE_DURATION: %s", err)
+		}
+		c.ThrottleUpdateDuration = &v
 	}
 }
 
@@ -198,28 +249,16 @@ func ParseAppFlagConfig(c *Config) {
 		c.ServerKey = *flagServerKey
 	}
 
-}
-
-// ParseNewRelicConfig ...
-func ParseNewRelicConfig(c *Config) {
-	// env
-	newRelicAppName, ok := syscall.Getenv("NEWRELIC_APP_NAME")
-	if ok {
-		c.NewRelicAppName = newRelicAppName
+	if *flagSiteTitle != "" {
+		c.SiteTitle = *flagSiteTitle
 	}
 
-	newRelicLicense, ok := syscall.Getenv("NEWRELIC_LICENSE")
-	if ok {
-		c.NewRelicLicense = newRelicLicense
-	}
-
-	// flags
-	if *flagNewRelicAppName != "" {
-		c.NewRelicAppName = *flagNewRelicAppName
-	}
-
-	if *flagNewRelicLicense != "" {
-		c.NewRelicLicense = *flagNewRelicLicense
+	if *flagThrottleUpdate != "" {
+		v, err := time.ParseDuration(*flagThrottleUpdate)
+		if err != nil {
+			log.Fatalf("Could not parse --throttle-update-frequency: %s", err)
+		}
+		c.ThrottleUpdateDuration = &v
 	}
 }
 
@@ -238,6 +277,11 @@ func ParseNomadEnvConfig(c *Config) {
 	nomadAddress, ok := syscall.Getenv("NOMAD_ADDR")
 	if ok {
 		c.NomadAddress = nomadAddress
+	}
+
+	nomadAclToken, ok := syscall.Getenv("NOMAD_ACL_TOKEN")
+	if ok {
+		c.NomadACLToken = nomadAclToken
 	}
 
 	listenPort, ok := syscall.Getenv("NOMAD_PORT_http")
@@ -276,6 +320,11 @@ func ParseNomadEnvConfig(c *Config) {
 	if ok {
 		c.NomadAllowStale = nomadAllowStale != "true"
 	}
+
+	nomadColor, ok := syscall.Getenv("NOMAD_COLOR")
+	if ok {
+		c.NomadColor = nomadColor
+	}
 }
 
 // ParseNomadFlagConfig ...
@@ -300,6 +349,10 @@ func ParseNomadFlagConfig(c *Config) {
 		c.NomadAddress = *flagNomadAddress
 	}
 
+	if *flagNomadACLToken != "" {
+		c.NomadACLToken = *flagNomadACLToken
+	}
+
 	if *flagNomadCACert != "" {
 		c.NomadCACert = *flagNomadCACert
 	}
@@ -314,6 +367,10 @@ func ParseNomadFlagConfig(c *Config) {
 
 	if *flagNomadAllowStale {
 		c.NomadAllowStale = *flagNomadAllowStale
+	}
+
+	if *flagNomadColor != "" {
+		c.NomadColor = *flagNomadColor
 	}
 }
 
@@ -334,9 +391,14 @@ func ParseConsulEnvConfig(c *Config) {
 		c.ConsulAddress = consulAddress
 	}
 
-	aclToken, ok := syscall.Getenv("CONSUL_ACL_TOKEN")
+	consulAclToken, ok := syscall.Getenv("CONSUL_ACL_TOKEN")
 	if ok {
-		c.ConsulACLToken = aclToken
+		c.ConsulACLToken = consulAclToken
+	}
+
+	consulColor, ok := syscall.Getenv("CONSUL_COLOR")
+	if ok {
+		c.ConsulColor = consulColor
 	}
 }
 
@@ -356,5 +418,9 @@ func ParseConsulFlagConfig(c *Config) {
 
 	if *flagConsulACLToken != "" {
 		c.ConsulACLToken = *flagConsulACLToken
+	}
+
+	if *flagConsulColor != "" {
+		c.ConsulColor = *flagConsulColor
 	}
 }

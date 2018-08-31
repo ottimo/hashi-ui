@@ -13,17 +13,22 @@ import {
   CONSUL_UNWATCH_NODES,
   CONSUL_UNWATCH_SERVICE,
   CONSUL_UNWATCH_SERVICES,
-  CONSUL_CLEAR_KV_PAIR
+  CONSUL_CLEAR_KV_PAIR,
+  CONSUL_FETCHED_SESSIONS,
+  CONSUL_UNWATCH_SESSIONS,
+  CONSUL_FETCHED_SESSION,
+  CONSUL_UNWATCH_SESSION,
+  CONSUL_DESTROYED_SESSION
 } from "../sagas/event"
 
 export function ChangeConsulRegionReducer(state = {}, action) {
   switch (action.type) {
     case CONSUL_SET_REGION:
-      document.location.href = window.NOMAD_ENDPOINT + "/consul/" + action.payload + "/services"
+      document.location.href = HASHI_PATH_PREFIX + "consul/" + action.payload + "/services"
       return {}
 
     case CONSUL_UNKNOWN_REGION:
-      document.location.href = window.NOMAD_ENDPOINT + "/consul"
+      document.location.href = HASHI_PATH_PREFIX + "consul"
       return {}
   }
 
@@ -114,4 +119,31 @@ export function ConsulKVPair(state = {}, action) {
   }
 
   return state
+}
+
+export function ConsulSessions(state = [], action) {
+  switch (action.type) {
+    case CONSUL_FETCHED_SESSIONS:
+      return action.payload;
+    case CONSUL_UNWATCH_SESSIONS:
+      return [];
+
+    default:
+      return state;
+  }
+}
+
+// TODO: Don't reduce anything.
+export function ConsulSession(state = {}, action) {
+  switch (action.type) {
+    case CONSUL_FETCHED_SESSION:
+      return action.payload;
+    case CONSUL_UNWATCH_SESSION:
+      return {};
+    case CONSUL_DESTROYED_SESSION:
+      return {};
+
+    default:
+      return state;
+  }
 }

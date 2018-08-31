@@ -17,5 +17,8 @@ build
 # Vagrant
 .vagrant
 
+.DS_Store
+stats.json
+
 # Cross compilation binaries
 qemu-arm-static

@@ -25,6 +25,22 @@ class NomadMainNav extends PureComponent {
         route = `${prefix}/jobs`
         break
 
+      case "jobs-service":
+        route = `${prefix}/jobs?job_type=service`
+        break
+
+      case "jobs-batch":
+        route = `${prefix}/jobs?job_type=batch`
+        break
+
+      case "jobs-system":
+        route = `${prefix}/jobs?job_type=system`
+        break
+
+      case "deployments":
+        route = `${prefix}/deployments`
+        break
+
       case "allocations":
         route = `${prefix}/allocations`
         break
@@ -39,6 +55,10 @@ class NomadMainNav extends PureComponent {
 
       case "servers":
         route = `${prefix}/servers`
+        break
+
+      case "system":
+        route = `${prefix}/system`
         break
 
       default:
@@ -56,13 +76,34 @@ class NomadMainNav extends PureComponent {
     const location = this.props.location
 
     const prefix = `/nomad/${this.props.router.params.region}`
+    const query = location.query || {}
+
+    if (!query["job_type"] && this.props.jobType) {
+      query["job_type"] = this.props.jobType
+    }
 
     if (location.pathname.startsWith(prefix + "/cluster")) {
       return "cluster"
     }
 
+    if (location.pathname.startsWith(prefix + "/jobs") && query["job_type"] == "service") {
+      return "jobs-service"
+    }
+
+    if (location.pathname.startsWith(prefix + "/jobs") && query["job_type"] == "batch") {
+      return "jobs-batch"
+    }
+
+    if (location.pathname.startsWith(prefix + "/jobs") && query["job_type"] == "system") {
+      return "jobs-system"
+    }
+
     if (location.pathname.startsWith(prefix + "/jobs")) {
       return "jobs"
+    }
+
+    if (location.pathname.startsWith(prefix + "/deployments")) {
+      return "deployments"
     }
 
     if (location.pathname.startsWith(prefix + "/allocations")) {
@@ -79,6 +120,10 @@ class NomadMainNav extends PureComponent {
 
     if (location.pathname.startsWith(prefix + "/servers")) {
       return "servers"
+    }
+
+    if (location.pathname.startsWith(prefix + "/system")) {
+      return "system"
     }
 
     return "cluster"
@@ -107,52 +152,19 @@ class NomadMainNav extends PureComponent {
       }
     }
 
-    return (
-      <SelectableList value={this.getActiveMenu()}>
-        <ListItem
-          key="cluster"
-          primaryText="Cluster"
-          value="cluster"
-          href={this.getRoute("cluster")}
-          onClick={clickHandler("cluster")}
-        />
-        <ListItem
-          key="jobs"
-          primaryText="Jobs"
-          value="jobs"
-          href={this.getRoute("jobs")}
-          onClick={clickHandler("jobs")}
-        />
-        <ListItem
-          key="allocations"
-          primaryText="Allocations"
-          value="allocations"
-          href={this.getRoute("allocations")}
-          onClick={clickHandler("allocations")}
-        />
-        <ListItem
-          key="evaluations"
-          primaryText="Evaluations"
-          value="evaluations"
-          href={this.getRoute("evaluations")}
-          onClick={clickHandler("evaluations")}
-        />
-        <ListItem
-          key="clients"
-          primaryText="Clients"
-          value="clients"
-          href={this.getRoute("clients")}
-          onClick={clickHandler("clients")}
-        />
-        <ListItem
-          key="servers"
-          primaryText="Servers"
-          value="servers"
-          href={this.getRoute("servers")}
-          onClick={clickHandler("servers")}
-        />
+    return <SelectableList value={this.getActiveMenu()}>
+        <ListItem key="cluster" primaryText="Cluster" value="cluster" href={this.getRoute("cluster")} onClick={clickHandler("cluster")} />
+        <ListItem key="jobs" primaryText="Jobs" value="jobs" href={this.getRoute("jobs")} onClick={clickHandler("jobs")} />
+        <ListItem key="jobs-batch" primaryText=" ⇢ Batch" value="jobs-batch" href={this.getRoute("jobs-batch")} onClick={clickHandler("jobs-batch")} />
+        <ListItem key="jobs-service" primaryText=" ⇢ Service" value="jobs-service" href={this.getRoute("jobs-service")} onClick={clickHandler("jobs-service")} />
+        <ListItem key="jobs-system" primaryText=" ⇢ System" value="jobs-system" href={this.getRoute("jobs-system")} onClick={clickHandler("jobs-system")} />
+        <ListItem key="deployments" primaryText="Deployments" value="deployments" href={this.getRoute("deployments")} onClick={clickHandler("deployments")} />
+        <ListItem key="allocations" primaryText="Allocations" value="allocations" href={this.getRoute("allocations")} onClick={clickHandler("allocations")} />
+        <ListItem key="evaluations" primaryText="Evaluations" value="evaluations" href={this.getRoute("evaluations")} onClick={clickHandler("evaluations")} />
+        <ListItem key="clients" primaryText="Clients" value="clients" href={this.getRoute("clients")} onClick={clickHandler("clients")} />
+        <ListItem key="servers" primaryText="Servers" value="servers" href={this.getRoute("servers")} onClick={clickHandler("servers")} />
+        <ListItem key="system" primaryText="System" value="system" href={this.getRoute("system")} onClick={clickHandler("system")} />
       </SelectableList>
-    )
   }
 
   render() {
@@ -168,8 +180,8 @@ NomadMainNav.propTypes = {
   dispatch: PropTypes.func.isRequired
 }
 
-function mapStateToProps() {
-  return {}
+function mapStateToProps({ job }) {
+  return { jobType: job.Type || undefined }
 }
 
 export default connect(mapStateToProps)(withRouter(NomadMainNav))

@@ -1,12 +1,15 @@
 import React, { Component } from "react"
 import PropTypes from "prop-types"
 import { connect } from "react-redux"
+import { Helmet } from "react-helmet"
 import { green500, blue500 } from "material-ui/styles/colors"
+import { green200, blue200 } from "material-ui/styles/colors"
 import { Grid, Row, Col } from "react-flexbox-grid"
 import Progressbar from "../components/Progressbar/Progressbar"
-import UtilizationPieChart from "../components/UtilizationPieChart/UtilizationPieChart"
 import ClusterEvents from "../components/ClusterEvents/ClusterEvents"
 import ClusterStatistics from "../components/ClusterStatistics/ClusterStatistics"
+import UtilizationAreaChart from "../components/UtilizationAreaChart/UtilizationAreaChart"
+
 import {
   NOMAD_WATCH_JOBS,
   NOMAD_UNWATCH_JOBS,
@@ -77,74 +80,77 @@ class Cluster extends Component {
   render() {
     const data = this.getChartData()
 
-    const UsedMemory = this.props.clusterStatistics.MemoryUsed / 1024 / 1024 / 1024
-    const TotalMemory = this.props.clusterStatistics.MemoryTotal / 1024 / 1024 / 1024
-    const memoryChart = [
-      {
-        name: "Used",
-        value: UsedMemory,
-        humanValue: UsedMemory.toFixed(2) + " GB",
-        color: green500
-      },
-      {
-        name: "Available",
-        value: TotalMemory - UsedMemory,
-        humanValue: (TotalMemory - UsedMemory).toFixed(2) + " GB",
-        color: blue500
-      }
-    ]
+    let clusterStats = ""
+    if (this.props.clusterStatistics.data) {
+      const CPUItems = [
+        { name: "Idle", stroke: blue500, fill: blue200 },
+        { name: "Used", stroke: green500, fill: green200 }
+      ]
 
-    const CPU = this.props.clusterStatistics.CPUIdleTime / this.props.clusterStatistics.CPUCores
-    const cpuChart = [
-      {
-        name: "busy",
-        value: 100 - Math.ceil(CPU),
-        humanValue: (100 - CPU).toFixed(0) + " %",
-        color: green500
-      },
-      {
-        name: "idle",
-        value: Math.ceil(CPU),
-        humanValue: CPU.toFixed(0) + " %",
-        color: blue500
-      }
-    ]
+      const MemoryItems = [
+        { name: "Free", stroke: blue500, fill: blue200 },
+        { name: "Used", stroke: green500, fill: green200 }
+      ]
+
+      clusterStats = (
+        <Row>
+          <Col key="cpu-utilization-pane" xs={12} sm={12} md={12} lg={6}>
+            <UtilizationAreaChart
+              title="CPU usage (%)"
+              data={this.props.clusterStatistics.data.cpu}
+              items={CPUItems}
+              allocated={true}
+              min={0}
+              max={100}
+            />
+          </Col>
+          <Col key="memory-utilization-pane" xs={12} sm={12} md={12} lg={6}>
+            <UtilizationAreaChart
+              title="RAM usage (GB)"
+              data={this.props.clusterStatistics.data.memory}
+              items={MemoryItems}
+              allocated={true}
+              min={0}
+            />
+          </Col>
+        </Row>
+      )
+    }
 
     return (
-      <Grid fluid style={{ padding: 0 }}>
-        <Row>
-          <Col key="cpu-status-pane" xs={12} sm={4} md={4} lg={4}>
-            <UtilizationPieChart title="Cluster CPU usage" data={cpuChart} />
-          </Col>
-          <Col key="memory-type-pane" xs={12} sm={4} md={4} lg={4}>
-            <UtilizationPieChart title="Cluster RAM usage (GB)" data={memoryChart} />
-          </Col>
-        </Row>
-        <Row style={{ marginTop: "1rem" }}>
-          <Col key="job-status-pane" xs={12} sm={4} md={4} lg={4}>
-            <Progressbar title="Job Status" data={data.jobStatus} />
-          </Col>
-          <Col key="job-type-pane" xs={12} sm={4} md={4} lg={4}>
-            <Progressbar title="Job Type" data={data.jobTypes} />
-          </Col>
-          <Col key="cluster-type-pane" xs={12} sm={4} md={4} lg={4}>
-            <ClusterStatistics />
-          </Col>
-        </Row>
-        <Row style={{ marginTop: "1rem" }}>
-          <Col key="client-pane" xs={12} sm={4} md={4} lg={4}>
-            <Progressbar title="Client Status" data={data.nodeStatus} />
-          </Col>
-          <Col key="member-pane" xs={12} sm={4} md={4} lg={4}>
-            <Progressbar title="Server Status" data={data.memberStatus} />
-          </Col>
-        </Row>
-        <Row style={{ marginTop: "1rem" }}>
-          <Col key="events-pane" xs={12} sm={12} md={12} lg={12}>
-            <ClusterEvents />
-          </Col>
-        </Row>
-      </Grid>
+      <span>
+        <Helmet>
+          <title>Cluster - Nomad - Hashi-UI</title>
+        </Helmet>
+
+        <Grid fluid style={{ padding: 0 }}>
+          {clusterStats}
+          <Row style={{ marginTop: "1rem" }}>
+            <Col key="job-status-pane" xs={12} sm={4} md={4} lg={4}>
+              <Progressbar title="Job Status" data={data.jobStatus} />
+            </Col>
+            <Col key="job-type-pane" xs={12} sm={4} md={4} lg={4}>
+              <Progressbar title="Job Type" data={data.jobTypes} />
+            </Col>
+            <Col key="cluster-type-pane" xs={12} sm={4} md={4} lg={4}>
+              <ClusterStatistics />
+            </Col>
+          </Row>
+          <Row style={{ marginTop: "1rem" }}>
+            <Col key="client-pane" xs={12} sm={4} md={4} lg={4}>
+              <Progressbar title="Client Status" data={data.nodeStatus} />
+            </Col>
+            <Col key="member-pane" xs={12} sm={4} md={4} lg={4}>
+              <Progressbar title="Server Status" data={data.memberStatus} />
+            </Col>
+          </Row>
+          <Row style={{ marginTop: "1rem" }}>
+            <Col key="events-pane" xs={12} sm={12} md={12} lg={12}>
+              <ClusterEvents />
+            </Col>
+          </Row>
+        </Grid>
+      </span>
     )
   }
 }

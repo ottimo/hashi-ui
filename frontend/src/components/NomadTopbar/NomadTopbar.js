@@ -8,7 +8,7 @@ import MenuItem from "material-ui/MenuItem"
 import FontIcon from "material-ui/FontIcon"
 import { withRouter } from "react-router"
 import { NOMAD_FETCH_REGIONS, NOMAD_SET_REGION, APP_DRAWER_OPEN } from "../../sagas/event"
-import { NOMAD_COLOR } from "../../config.js"
+import { NOMAD_COLOR, SITE_TITLE } from "../../config.js"
 
 class AppTopbar extends PureComponent {
   componentWillMount() {
@@ -30,7 +30,7 @@ class AppTopbar extends PureComponent {
   }
 
   title() {
-    let title = "Nomad"
+    let title = `${SITE_TITLE} Nomad`
 
     if ("region" in this.props.router.params) {
       title = title + " @ " + this.props.router.params["region"]
@@ -60,7 +60,7 @@ class AppTopbar extends PureComponent {
         anchorOrigin={{ horizontal: "right", vertical: "top" }}
       >
         {this.props.nomadRegions.map(region => {
-          return <MenuItem primaryText={region} onTouchTap={() => this._onChangeNomadRegion(region)} />
+          return <MenuItem primaryText={region} onClick={() => this._onChangeNomadRegion(region)} />
         })}
       </IconMenu>
     )

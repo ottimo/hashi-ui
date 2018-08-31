@@ -1,4 +1,4 @@
-import React, { Component } from "react"
+import React, { PureComponent, Component } from "react"
 import PropTypes from "prop-types"
 import { Grid, Row, Col } from "react-flexbox-grid"
 import FontIcon from "material-ui/FontIcon"
@@ -11,9 +11,13 @@ import ReactTooltip from "react-tooltip"
 import { Table, Column, Cell } from "fixed-data-table-2"
 import AllocationStatusIcon from "../AllocationStatusIcon/AllocationStatusIcon"
 import AllocationLink from "../AllocationLink/AllocationLink"
+import FilterFreetext from "../FilterFreetext/FilterFreetext"
 import JobLink from "../JobLink/JobLink"
 import ClientLink from "../ClientLink/ClientLink"
 import FormatTime from "../FormatTime/FormatTime"
+import FormatBoolean from "../FormatBoolean/FormatBoolean"
+import AllocationConsulHealthCell from "../AllocationConsulHealthCell/AllocationConsulHealthCell"
+import AllocationStatsCell from "../AllocationStatsCell/AllocationStatsCell"
 
 const nodeIdToNameCache = {}
 const allocIdRegexp = /\[(\d+)\]/
@@ -25,7 +29,7 @@ const getAllocationNumberFromName = allocationName => {
 
 /* eslint-disable react/prop-types */
 
-const AllocationStatusIconCell = ({ rowIndex, data, ...props }) =>
+const AllocationStatusIconCell = ({ rowIndex, data, ...props }) => (
   <Cell
     {...props}
     onMouseEnter={() => {
@@ -35,32 +39,50 @@ const AllocationStatusIconCell = ({ rowIndex, data, ...props }) =>
       ReactTooltip.hide()
     }}
   >
-    <AllocationStatusIcon allocation={data[rowIndex]} />
+    <AllocationStatusIcon allocation={data[rowIndex]} allocations={data} rowIndex={rowIndex} />
   </Cell>
+)
 
-const AllocationLinkCell = ({ rowIndex, data, ...props }) =>
+const AllocationLinkCell = ({ rowIndex, data, ...props }) => (
   <Cell {...props}>
     <AllocationLink allocationId={data[rowIndex].ID} />
   </Cell>
+)
 
-const JobLinkCell = ({ rowIndex, data, ...props }) =>
+const JobLinkCell = ({ rowIndex, data, ...props }) => (
   <Cell {...props}>
-    <JobLink jobId={data[rowIndex].JobID} />
+    <JobLink jobId={data[rowIndex].JobID} version={data[rowIndex].JobVersion}>
+      {data[rowIndex].JobID} (v{data[rowIndex].JobVersion})
+    </JobLink>
   </Cell>
+)
+const DeploymentHealthCell = ({ rowIndex, data, ...props }) => {
+  if (!data[rowIndex].DeploymentStatus) {
+    return null
+  }
 
-const JobTaskGroupLinkCell = ({ rowIndex, data, ...props }) =>
+  return (
+    <Cell {...props}>
+      <FormatBoolean value={data[rowIndex].DeploymentStatus.Healthy} />
+    </Cell>
+  )
+}
+
+const JobTaskGroupLinkCell = ({ rowIndex, data, ...props }) => (
   <Cell {...props}>
     <JobLink jobId={data[rowIndex].JobID} taskGroupId={data[rowIndex].TaskGroupId}>
       {data[rowIndex].TaskGroup} (#{getAllocationNumberFromName(data[rowIndex].Name)})
     </JobLink>
   </Cell>
+)
 
-const ClientLinkCell = ({ rowIndex, data, clients, ...props }) =>
+const ClientLinkCell = ({ rowIndex, data, clients, ...props }) => (
   <Cell {...props}>
     <ClientLink clientId={data[rowIndex].NodeID} clients={clients} />
   </Cell>
+)
 
-const AgeCell = ({ rowIndex, data, ...props }) =>
+const AgeCell = ({ rowIndex, data, ...props }) => (
   <Cell
     {...props}
     onMouseEnter={() => {
@@ -72,35 +94,61 @@ const AgeCell = ({ rowIndex, data, ...props }) =>
   >
     <FormatTime inTable identifier={data[rowIndex].ID} time={data[rowIndex].CreateTime} />
   </Cell>
+)
 
-const StatusCell = ({ rowIndex, data, ...props }) =>
-  <Cell {...props}>
-    {data[rowIndex].ClientStatus}
-  </Cell>
+const StatusCell = ({ rowIndex, data, ...props }) => <Cell {...props}>{data[rowIndex].ClientStatus}</Cell>
 
-const ActionsCell = ({ rowIndex, data, ...props }) =>
+const ActionsCell = ({ rowIndex, data, ...props }) => (
   <Cell {...props}>
+    <AllocationLink allocationId={data[rowIndex].ID} linkAppend="/stats">
+      <FontIcon className="material-icons">show_chart</FontIcon>
+    </AllocationLink>
     <AllocationLink allocationId={data[rowIndex].ID} linkAppend="/files" linkQuery={{ path: "/alloc/logs/" }}>
       <FontIcon className="material-icons">format_align_left</FontIcon>
     </AllocationLink>
   </Cell>
+)
+
+const AllocationStatsCell2 = ({ rowIndex, data, type, passive, ...props }) => (
+  <Cell>
+    <AllocationStatsCell allocation={data[rowIndex]} type={type} passive={passive} />
+  </Cell>
+)
 
 /* eslint-disable react/prop-types */
 
 const jobColumn = (allocations, display) =>
-  display
-    ? <Column header={<Cell>Job</Cell>} cell={<JobLinkCell data={allocations} />} flexGrow={2} width={200} />
-    : null
+  display ? (
+    <Column header={<Cell>Job</Cell>} cell={<JobLinkCell data={allocations} />} flexGrow={2} width={200} />
+  ) : null
 
 const clientColumn = (allocations, display, clients) =>
-  display
-    ? <Column
-        header={<Cell>Client</Cell>}
-        cell={<ClientLinkCell data={allocations} clients={clients} />}
-        flexGrow={2}
-        width={200}
-      />
-    : null
+  display ? (
+    <Column
+      header={<Cell>Client</Cell>}
+      cell={<ClientLinkCell data={allocations} clients={clients} />}
+      flexGrow={2}
+      width={200}
+    />
+  ) : null
+
+const consulHealthColumn = allocations =>
+  CONSUL_ENABLED ? (
+    <Column
+      align="center"
+      header={
+        <Cell>
+          <div
+            style={{ height: 20, width: 20, backgroundSize: "contain" }}
+            title="Consul Health"
+            className="consul-logo-small"
+          />
+        </Cell>
+      }
+      cell={<AllocationConsulHealthCell data={allocations} />}
+      width={30}
+    />
+  ) : null
 
 class AllocationList extends Component {
   constructor(props) {
@@ -168,60 +216,25 @@ class AllocationList extends Component {
   }
 
   allocationIdFilter() {
-    const location = this.props.location
-    const query = this.props.location.query || {}
-
     return (
       <Col key="allocation-id-filter-pane" xs={12} sm={6} md={6} lg={3}>
-        <TextField
-          floatingLabelText="ID"
-          value={query.allocation_id || undefined}
-          onChange={(proxy, value) => {
-            this.props.router.push({
-              pathname: location.pathname,
-              query: { ...query, allocation_id: value }
-            })
-          }}
-        />
+        <FilterFreetext query="allocation_id" label="ID" />
       </Col>
     )
   }
 
   jobIdFilter() {
-    const location = this.props.location
-    const query = this.props.location.query || {}
-
     return (
       <Col key="job-filter-pane" xs={12} sm={6} md={6} lg={3}>
-        <TextField
-          floatingLabelText="Job"
-          value={query.job || undefined}
-          onChange={(proxy, value) => {
-            this.props.router.push({
-              pathname: location.pathname,
-              query: { ...query, job: value }
-            })
-          }}
-        />
+        <FilterFreetext query="job" label="Job" focusOnLoad />
       </Col>
     )
   }
 
   clientFilter() {
-    const query = this.props.location.query || {}
-
     return (
       <Col key="client-filter-pane" xs={12} sm={6} md={6} lg={3}>
-        <TextField
-          floatingLabelText="Client"
-          value={query.client || undefined}
-          onChange={(proxy, value) => {
-            this.props.router.push({
-              pathname: location.pathname,
-              query: { ...query, client: value }
-            })
-          }}
-        />
+        <FilterFreetext query="client" label="Client" />
       </Col>
     )
   }
@@ -272,8 +285,8 @@ class AllocationList extends Component {
           <CardText>
             <Grid fluid style={{ padding: 0, margin: 0 }}>
               <Row>
-                {this.allocationIdFilter()}
                 {showJobColumn ? this.jobIdFilter() : null}
+                {this.allocationIdFilter()}
                 {this.allocationStatusFilter()}
                 {showClientColumn ? this.clientFilter() : null}
               </Row>
@@ -302,12 +315,30 @@ class AllocationList extends Component {
                 flexGrow={2}
                 width={200}
               />
-              <Column header={<Cell>Status</Cell>} cell={<StatusCell data={allocations} />} width={200} />
+              <Column header={<Cell>Status</Cell>} cell={<StatusCell data={allocations} />} width={100} />
+              {consulHealthColumn(allocations)}
+              <Column
+                align="center"
+                header={<Cell>Deployment</Cell>}
+                cell={<DeploymentHealthCell data={allocations} />}
+                width={75}
+              />
               {clientColumn(allocations, this.props.showClientColumn, this.props.nodes)}
+              <Column
+                align="center"
+                header={<Cell>CPU</Cell>}
+                cell={<AllocationStatsCell2 data={allocations} type="cpu" passive={false} />}
+                width={75}
+              />
+              <Column
+                align="center"
+                header={<Cell>Memory</Cell>}
+                cell={<AllocationStatsCell2 data={allocations} type="memory" passive={true} />}
+                width={75}
+              />
               <Column header={<Cell>Age</Cell>} cell={<AgeCell data={allocations} />} width={100} />
               <Column header={<Cell>Actions</Cell>} cell={<ActionsCell data={allocations} />} width={100} />
             </Table>
-            <ReactTooltip />
           </CardText>
         </Card>
       </div>

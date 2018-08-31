@@ -33,9 +33,10 @@ class SelectNomadRegion extends Component {
               const regionName = this.props.nomadRegions[region]
               return (
                 <ListItem
+                  key={regionName}
                   leftIcon={<FontIcon className="material-icons">public</FontIcon>}
                   primaryText={regionName}
-                  onTouchTap={() => this._onClick(regionName)}
+                  onClick={() => this._onClick(regionName)}
                 />
               )
             })}
